@@ -1,17 +1,20 @@
-const knexcfg = {
+import type { Knex } from 'knex';
+import 'dotenv/config';
+
+const config: { [key: string]: Knex.Config } = {
   development: {
-    client: "mysql2",
+    client: process.env.DB_CLIENT || 'mysql2',
     connection: {
-      host: "127.0.0.1",
-      port: 3306,
-      user: "root",
-      password: "root",
-      database: "trabalho_apaw",
+      host: process.env.DB_HOST || '127.0.0.1',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'root',
+      database: process.env.DB_DATABASE || 'trabalho_apaw',
+      port: parseInt(process.env.DB_PORT || '3306', 10),
     },
     migrations: {
-      directory: "./src/knex/migrations",
+      directory: './src/knex/migrations',
     },
   },
 };
 
-export default knexcfg;
+export default config;

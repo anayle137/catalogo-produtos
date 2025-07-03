@@ -13,10 +13,6 @@ export interface IProduto {
   descricao: string;
 }
 
-export interface IProdutos {
-  products: IProduto[];
-}
-
 function App() {
   const [produtos, setProdutos] = React.useState<IProduto[]>([]);
   const [nome, setNome] = React.useState("");
@@ -24,35 +20,42 @@ function App() {
   const [descricao, setDescricao] = React.useState("");
   const [erro, setErro] = React.useState(false);
 
+  async function getProducts() {
+    try {
+      const promiseProdutos = await fetch("/api/products");
+      const response = await promiseProdutos.json();
+      if (Array.isArray(response)) {
+        setProdutos(response);
+      } else if (response && Array.isArray(response.products)) {
+        setProdutos(response.products);
+      } else {
+        console.error("Formato de resposta inesperado:", response);
+        setProdutos([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar os produtos:", error);
+    }
+  }
+
   async function handleAddProduto(event: React.FormEvent) {
     event.preventDefault();
-
     if (!nome || !preco || !descricao) {
       setErro(true);
       return;
     }
-
     setErro(false);
-
     const novoProduto: IProduto = {
       nome,
-      preco,
+      preco: parseFloat(preco as string),
       descricao,
     };
-
     try {
-      const headers = new Headers();
-      headers.append("Content-Type", "application/json");
-
-      await fetch("http://localhost:3000/products", {
+      await fetch("/api/products", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(novoProduto),
-        headers,
       });
-
       await getProducts();
-
-      // Resetar os campos
       setNome("");
       setPreco("");
       setDescricao("");
@@ -63,7 +66,7 @@ function App() {
 
   async function handleDeleteProduto(id: number) {
     try {
-      await fetch(`http://localhost:3000/products/${id}`, {
+      await fetch(`/api/products/${id}`, {
         method: "DELETE",
       });
       await getProducts();
@@ -72,32 +75,18 @@ function App() {
     }
   }
 
-  async function getProducts() {
-    try {
-      const promiseProdutos = await fetch("http://localhost:3000/products");
-      const response = await promiseProdutos.json();
-
-      if (response && Array.isArray(response.products)) {
-        setProdutos(response.products);
-      } else {
-        console.error("Formato de resposta inesperado:", response);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar os produtos:", error);
-    }
-  }
-
   React.useEffect(() => {
     getProducts();
   }, []);
 
   return (
-    // wrapper
     <div className="grid grid-cols-[320px_1fr] container gap-8 h-screen py-12 max-laptop:grid-cols-1 max-laptop:gap-20">
       <div>
-        <Package className="mb-10" />
+        <div className="flex items-center gap-3 mb-10">
+          <Package />
+          <h1 className="text-xl font-bold">Catálogo de Produtos</h1>
+        </div>
         <form onSubmit={handleAddProduto} className="flex flex-col gap-6">
-          {/* input */}
           <InputComponent
             value={nome}
             handleChange={(e) => setNome(e.target.value)}
@@ -115,14 +104,11 @@ function App() {
             label="Preço do Produto"
             placeholder="Digite o preço do produto..."
           />
-
           <div className="flex flex-col gap-2">
             <Label htmlFor="desc_produto">Descrição do Produto</Label>
             <Textarea
               value={descricao}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                setDescricao(e.target.value)
-              }
+              onChange={(e) => setDescricao(e.target.value)}
               className="resize-none h-40"
               id="desc_produto"
               placeholder="Digite a descrição do produto..."
@@ -142,10 +128,10 @@ function App() {
       <main className="overflow-auto max-h-screen scrollbar-thin scrollbar-thumb-zinc-500 scrollbar-track-zinc-200 max-laptop:overflow-visible grid">
         <ul className="grid grid-cols-3 items-start gap-5 max-laptop:grid-cols-1">
           {produtos.length > 0 ? (
-            produtos.map((produto, index) => (
+            produtos.map((produto) => (
               <ProdutoComponent
                 handleDelete={() => handleDeleteProduto(produto.id!)}
-                key={index}
+                key={produto.id}
                 nome={produto.nome}
                 preco={produto.preco}
                 descricao={produto.descricao}

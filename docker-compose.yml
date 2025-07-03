@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: catalogo-db-mysql
+    restart: always
+    environment:
+    
+      MYSQL_ROOT_PASSWORD: root
+
+      MYSQL_DATABASE: trabalho_apaw
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: catalogo-backend
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "3001:3001"
+    environment:
+      DB_CLIENT: mysql2
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_DATABASE: trabalho_apaw
+      DB_PORT: 3306
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: catalogo-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
